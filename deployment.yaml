@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-go-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go-app
+  template:
+    metadata:
+      labels:
+        app: go-app
+    spec:
+      initContainers:
+        - name: fix-permissions-fluentbit
+          image: alpine:3.6
+          command: ["sh", "-c", "chmod -R a+rwx /var/log/myapp"]
+          volumeMounts:
+            - name: fluentbit-logs
+              mountPath: /var/log/myapp
+      containers:
+        - name: go-app-container
+          image: docker.io/suraj15march/my-go-app-1:latest
+          volumeMounts:
+            - name: fluentbit-logs
+              mountPath: /var/log/myapp
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8080
+      volumes:
+        - name: fluentbit-logs
+          hostPath:
+            path: /var/log/myapp
